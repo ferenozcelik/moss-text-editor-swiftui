@@ -189,25 +189,118 @@ RichTextEditor(
 
 ## Recipes
 
-### Showing formatted text without editing
+Each recipe is a complete screen in the [example app](#example-app). Copy the file and make it yours.
+
+<table>
+<tr>
+<td width="240"><img src="Docs/Images/boxed-light.png" width="240" alt="Boxed editor"></td>
+<td>
+
+### Boxed editor
+
+The toolbar sits on top of the text inside a rounded box, like a form field.
 
 ```swift
-RichTextEditor(
-    text: $text,
-    configuration: RichTextConfiguration(isScrollEnabled: false, isEditable: false)
+VStack(spacing: 0) {
+    RichTextToolbar(context: context)
+    Divider()
+    RichTextEditor(text: $text, context: context)
+        .frame(height: 260)
+}
+.background(Color(.secondarySystemBackground),
+            in: RoundedRectangle(cornerRadius: 16))
+```
+
+[`BoxedEditor.swift`](Example/MossTextEditorExample/Shared/BoxedEditor.swift)
+
+</td>
+</tr>
+<tr>
+<td width="240"><img src="Docs/Images/floating-light.png" width="240" alt="Floating toolbar"></td>
+<td>
+
+### Floating toolbar
+
+A capsule that floats above the keyboard and only shows up while typing.
+
+```swift
+RichTextEditor(text: $text, context: context)
+    .overlay(alignment: .bottom) {
+        if context.isEditing {
+            RichTextToolbar(context: context,
+                            items: [.bold, .italic, .title, .bulletList])
+                .background(.regularMaterial, in: Capsule())
+                .shadow(radius: 12, y: 4)
+                .padding()
+        }
+    }
+```
+
+[`FloatingToolbarExample.swift`](Example/MossTextEditorExample/Examples/FloatingToolbarExample.swift)
+
+</td>
+</tr>
+<tr>
+<td width="240"><img src="Docs/Images/composer-light.png" width="240" alt="Message composer"></td>
+<td>
+
+### Message composer
+
+A chat input that grows with its text. Sent messages are shown with the same editor, read-only.
+
+```swift
+HStack(alignment: .bottom) {
+    VStack(spacing: 0) {
+        RichTextEditor(
+            text: $draft,
+            context: context,
+            configuration: RichTextConfiguration(
+                placeholder: "Message",
+                isScrollEnabled: false
+            )
+        )
+        if context.isEditing {
+            RichTextToolbar(context: context,
+                            items: [.bold, .italic, .bulletList])
+        }
+    }
+    .background(Color(.secondarySystemBackground),
+                in: RoundedRectangle(cornerRadius: 20))
+
+    Button(action: send) {
+        Image(systemName: "arrow.up.circle.fill")
+    }
+}
+```
+
+[`MessageComposerExample.swift`](Example/MossTextEditorExample/Examples/MessageComposerExample.swift)
+
+</td>
+</tr>
+<tr>
+<td width="240"><img src="Docs/Images/custom-light.png" width="240" alt="Custom style"></td>
+<td>
+
+### Your own look
+
+Serif fonts, warm colors and roomy spacing turn the same editor into a paper notebook.
+
+```swift
+RichTextConfiguration(
+    bodyFont: serif(19),
+    titleFont: serif(30),
+    headingFont: serif(23),
+    tintColor: .systemBrown,
+    lineSpacing: 6,
+    paragraphSpacing: 12
 )
 ```
 
-### An input that grows as you type
+[`CustomStyleExample.swift`](Example/MossTextEditorExample/Examples/CustomStyleExample.swift)
 
-```swift
-RichTextEditor(
-    text: $text,
-    configuration: RichTextConfiguration(placeholder: "Message", isScrollEnabled: false)
-)
-```
-
-The editor is as tall as its text. Put it in a `ScrollView` if it can get longer than the screen.
+</td>
+</tr>
+</table>
 
 ## Advanced
 
@@ -242,12 +335,11 @@ struct NoteView: View {
 
 What the context tells you about the text at the cursor:
 
-| Property | Description |
+| Name | Description |
 | --- | --- |
-| `activeStyles` | Text styles at the cursor, for example `[.bold, .italic]`. `isActive(.bold)` checks one |
-| `blockStyle` | `.title`, `.heading` or `.body` |
-| `listStyle` | `.bullet`, `.numbered` or `nil` |
-| `selectedRange` | The selected range in the text |
+| `isActive(_:)` | Whether a text style is on where the cursor is. `context.isActive(.bold)` is `true` when the cursor is in bold text |
+| `blockStyle` | The paragraph style where the cursor is: `.title`, `.heading` or `.body` |
+| `listStyle` | The list the cursor is in: `.bullet`, `.numbered`, or `nil` outside a list |
 | `isEditing` | `true` while the keyboard is up. Handy for showing controls only while typing |
 | `canUndo`, `canRedo` | Whether there is something to undo or redo |
 
@@ -264,19 +356,7 @@ What you can ask it to do:
 
 If you don't pass a context, the editor creates its own. You only need one when something outside the editor has to read or change the formatting.
 
-### Loading text from elsewhere
-
-You can set `text` to any `NSAttributedString`, for example one loaded from RTF or built in code. The editor adapts it to your configuration:
-
-- every font becomes the closest of `titleFont`, `headingFont` or `bodyFont` by size, keeping bold and italic;
-- a paragraph starting with `•` + tab or `1.` + tab is treated as a list item.
-
-### How formatting is stored
-
-There is no hidden data model. Everything lives in the attributed string:
-
-- **Title and heading** are just their font sizes.
-- **List items** are real text: a `•` or a number, then a tab. Lists still read well as plain text and survive RTF.
+For everything else, see [`RichTextContext.swift`](Sources/MossTextEditor/RichTextContext.swift).
 
 ## Example app
 
