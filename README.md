@@ -1,31 +1,40 @@
 # MossTextEditor
 
-A simple rich text editor for SwiftUI, backed by `UITextView`.
+A rich text editor for SwiftUI. Drop it into your app to let people write with bold, italic, headings and lists.
 
-- **Inline styles:** bold, italic, underline, strikethrough
-- **Paragraph styles:** title, heading, body
-- **Lists:** bulleted and numbered. Return continues a list, Return on an empty item ends it, and `- `, `* ` or `1. ` at the start of a line starts one
-- **Toolbar** that you can show above the keyboard, place anywhere (on top of a box, floating, in a composer) or replace with your own controls
-- Undo and redo for typing, formatting and list edits
-- Placeholder, dark mode, plain-text pasting
+<p align="center">
+  <img src="Docs/Images/boxed-light.png" width="260" alt="Editor in a rounded box with the toolbar on top">
+  <img src="Docs/Images/keyboard-dark.png" width="260" alt="Full-screen editor with the toolbar above the keyboard, in dark mode">
+  <img src="Docs/Images/custom-light.png" width="260" alt="Editor with serif fonts and a paper background">
+</p>
 
-Requires iOS 16+.
+## Features
+
+- **Bold**, *italic*, underline and ~~strikethrough~~
+- Title and heading paragraphs
+- Bulleted and numbered lists. Typing `- ` or `1. ` at the start of a line starts a list
+- A ready-made toolbar you can put above the keyboard or anywhere on screen
+- Undo and redo
+- Saving and loading
+- Placeholder, dark mode, custom fonts and colors
+
+Requires iOS 16 or later.
 
 ## Installation
 
-In Xcode, choose **File → Add Package Dependencies…** and enter:
+In Xcode, choose **File → Add Package Dependencies…** and paste:
 
 ```
 https://github.com/ferenozcelik/moss-text-editor-swiftui
 ```
 
-Or add it to `Package.swift`:
+Or add it to your `Package.swift`:
 
 ```swift
 .package(url: "https://github.com/ferenozcelik/moss-text-editor-swiftui", from: "1.0.0")
 ```
 
-## Usage
+## Quick start
 
 ```swift
 import MossTextEditor
@@ -37,93 +46,246 @@ struct NoteView: View {
     var body: some View {
         RichTextEditor(
             text: $text,
-            configuration: RichTextConfiguration(keyboardToolbarItems: RichTextToolbarItem.defaultItems)
+            configuration: RichTextConfiguration(
+                placeholder: "Start writing…",
+                keyboardToolbarItems: RichTextToolbarItem.defaultItems
+            )
         )
     }
 }
 ```
 
-Without `keyboardToolbarItems` the editor shows no formatting controls, so you can place them yourself (see [Custom controls](#custom-controls)).
+That's a working editor. The formatting buttons appear above the keyboard while typing.
 
-### Configuration
+`text` is an `NSAttributedString`: the text together with its formatting. It updates as the user types.
+
+## Putting the toolbar somewhere else
+
+You don't have to show the toolbar above the keyboard. You can place `RichTextToolbar` anywhere, for example on top of the editor:
+
+```swift
+struct NoteView: View {
+    @State private var text = NSAttributedString()
+    @StateObject private var context = RichTextContext()
+
+    var body: some View {
+        VStack(spacing: 0) {
+            RichTextToolbar(context: context)
+            Divider()
+            RichTextEditor(text: $text, context: context)
+        }
+    }
+}
+```
+
+The toolbar and the editor are separate views, so they need a way to talk to each other. That's what `RichTextContext` is for. Create one and give the same one to both:
+
+- the editor tells the context what's under the cursor (is it bold? is it a list?), so the toolbar can highlight the right buttons;
+- the toolbar asks the context to change the text (make it bold, start a list), and the context passes it to the editor.
+
+The first screenshot above is built this way. Its code is in [`BoxedEditor.swift`](Example/MossTextEditorExample/Shared/BoxedEditor.swift), about 40 lines you can copy into your app.
+
+## Choosing toolbar buttons
+
+Pass the buttons you want, in order:
+
+```swift
+RichTextToolbar(context: context, items: [.bold, .italic, .divider, .bulletList, .undo, .redo])
+```
+
+The same list works for the keyboard toolbar through `keyboardToolbarItems`.
+
+| Item | Button |
+| --- | --- |
+| `.bold`, `.italic`, `.underline`, `.strikethrough` | Text styles |
+| `.title`, `.heading` | Paragraph styles. Tapping the active one turns the paragraph back into body text |
+| `.bulletList`, `.numberedList` | Lists |
+| `.undo`, `.redo` | Undo and redo |
+| `.dismissKeyboard` | Hides the keyboard |
+| `.divider` | A thin separator between groups |
+
+`RichTextToolbarItem.defaultItems` has all of them.
+
+When the buttons don't fit, the toolbar scrolls sideways. Undo, redo and dismiss keyboard stay pinned to the right edge so they are always reachable. To let them scroll with the rest, pass `pinsActions: false` to `RichTextToolbar`, or `keyboardToolbarPinsActions: false` to the configuration.
+
+## Saving and loading
+
+Turn the text into `Data` to store it in a file, a database or Core Data / SwiftData:
+
+```swift
+// Save
+let data = try text.richTextData()
+
+// Load
+text = try NSAttributedString(richTextData: data)
+```
+
+Two formats are available:
+
+| Format | Use it when |
+| --- | --- |
+| `.archive` (default) | You only read the data back in your own app. Keeps everything exactly |
+| `.rtf` | Other apps should be able to open it, for example when exporting a file |
+
+```swift
+let rtf = try text.richTextData(format: .rtf)
+text = try NSAttributedString(richTextData: rtf, format: .rtf)
+```
+
+Text colors are not saved, so saved text always follows light and dark mode.
+
+For search or previews, use the plain text: `text.string`.
+
+## Customizing
+
+Everything about the editor's look and behavior is set with `RichTextConfiguration`. Pass only what you want to change:
 
 ```swift
 RichTextEditor(
     text: $text,
     configuration: RichTextConfiguration(
-        bodyFont: .systemFont(ofSize: 17),
-        titleFont: .systemFont(ofSize: 28),
-        headingFont: .systemFont(ofSize: 22),
+        bodyFont: .systemFont(ofSize: 18),
         tintColor: .systemGreen,
-        placeholder: "Start writing…",
-        autocorrects: true, // off by default
-        keyboardToolbarItems: [.bold, .italic, .divider, .bulletList, .dismissKeyboard]
+        placeholder: "Dear diary…",
+        autocorrects: true
     )
 )
 ```
 
-Set `isScrollEnabled: false` to let the editor grow with its content inside your own `ScrollView`.
-Set `showsScrollIndicator: false` to hide the scroll bar.
+### All options
 
-Undo, redo and dismiss keyboard are pinned to the trailing edge of the toolbar while the other items scroll. Pass `pinsActions: false` to `RichTextToolbar` (or `keyboardToolbarPinsActions: false` in the configuration) to let them scroll with the rest.
+| Option | Default | Description |
+| --- | --- | --- |
+| **Text** | | |
+| `bodyFont` | System 17 | Font of normal text. Bold and italic are derived from it |
+| `titleFont` | System 28 | Font of title paragraphs. Titles are bold |
+| `headingFont` | System 22 | Font of heading paragraphs. Headings are bold |
+| `textColor` | `.label` | Color of the text |
+| `tintColor` | none (uses the app's tint) | Color of the cursor, the selection and the active buttons of the keyboard toolbar |
+| `lineSpacing` | `4` | Space between lines inside a paragraph |
+| `paragraphSpacing` | `8` | Space after each paragraph |
+| `listIndent` | `28` | How far list item text is indented from the bullet or number |
+| **Layout** | | |
+| `contentInsets` | 16 top/bottom, 12 left/right | Space between the edges of the editor and the text |
+| `placeholder` | none | Text shown while the editor is empty |
+| `placeholderColor` | `.placeholderText` | Color of the placeholder |
+| `isScrollEnabled` | `true` | When `false`, the editor doesn't scroll and grows as tall as its text. Use it inside your own `ScrollView` or for chat-style inputs |
+| `showsScrollIndicator` | `true` | Shows the scroll bar while scrolling |
+| **Behavior** | | |
+| `isEditable` | `true` | When `false`, the text can be read and selected but not changed |
+| `keyboardDismissMode` | `.interactive` | How the keyboard hides when scrolling the text |
+| `autocorrects` | `false` | Turns on the system's autocorrection |
+| `autoformatsLists` | `true` | Typing `- `, `* ` or `1. ` at the start of a line starts a list |
+| `pastesPlainText` | `true` | Pasted text takes the style at the cursor instead of keeping its original formatting |
+| **Keyboard toolbar** | | |
+| `keyboardToolbarItems` | `[]` (no toolbar) | Buttons shown above the keyboard. See [Choosing toolbar buttons](#choosing-toolbar-buttons) |
+| `keyboardToolbarPinsActions` | `true` | Keeps undo, redo and dismiss keyboard pinned to the right edge of the keyboard toolbar |
 
-### Custom controls
+## Recipes
 
-`RichTextContext` connects an editor to the controls that format it. The editor writes the state at the cursor into it (is the text bold, which paragraph style, which list…), and the controls call its actions to change the text.
-Create one, pass the same instance to the editor and to `RichTextToolbar` or your own buttons:
+### Showing formatted text without editing
 
 ```swift
-@StateObject private var context = RichTextContext()
+RichTextEditor(
+    text: $text,
+    configuration: RichTextConfiguration(isScrollEnabled: false, isEditable: false)
+)
+```
 
-var body: some View {
-    VStack {
+### An input that grows as you type
+
+```swift
+RichTextEditor(
+    text: $text,
+    configuration: RichTextConfiguration(placeholder: "Message", isScrollEnabled: false)
+)
+```
+
+The editor is as tall as its text. Put it in a `ScrollView` if it can get longer than the screen.
+
+## Advanced
+
+### Building your own controls
+
+You can skip `RichTextToolbar` and use your own buttons, menus or keyboard shortcuts. They all go through a `RichTextContext`:
+
+```swift
+struct NoteView: View {
+    @State private var text = NSAttributedString()
+    @StateObject private var context = RichTextContext()
+
+    var body: some View {
         RichTextEditor(text: $text, context: context)
-        RichTextToolbar(context: context, items: [.bold, .italic, .bulletList])
-        Button("Bold") { context.toggle(.bold) }
-            .foregroundStyle(context.isActive(.bold) ? .green : .primary)
+            .toolbar {
+                Button {
+                    context.toggle(.bold)
+                } label: {
+                    Image(systemName: "bold")
+                }
+                .foregroundStyle(context.isActive(.bold) ? .green : .primary)
+
+                Menu("Style") {
+                    Button("Title") { context.setBlockStyle(.title) }
+                    Button("Heading") { context.setBlockStyle(.heading) }
+                    Button("Body") { context.setBlockStyle(.body) }
+                }
+            }
     }
 }
 ```
 
-`RichTextContext` exposes `activeStyles`, `blockStyle`, `listStyle`, `selectedRange`, `isEditing`, `canUndo` and `canRedo`.
-Its actions are `toggle(_:)`, `setBlockStyle(_:)`, `toggleList(_:)`, `undo()`, `redo()`, `focus()` and `dismissKeyboard()`.
+What the context tells you about the text at the cursor:
 
-### Saving
+| Property | Description |
+| --- | --- |
+| `activeStyles` | Text styles at the cursor, for example `[.bold, .italic]`. `isActive(.bold)` checks one |
+| `blockStyle` | `.title`, `.heading` or `.body` |
+| `listStyle` | `.bullet`, `.numbered` or `nil` |
+| `selectedRange` | The selected range in the text |
+| `isEditing` | `true` while the keyboard is up. Handy for showing controls only while typing |
+| `canUndo`, `canRedo` | Whether there is something to undo or redo |
 
-The text is a regular `NSAttributedString`. To store it, encode it to `Data`:
+What you can ask it to do:
 
-```swift
-let data = try text.richTextData()                    // keyed archive, lossless
-let restored = try NSAttributedString(richTextData: data)
+| Method | Description |
+| --- | --- |
+| `toggle(_:)` | Turns a text style on or off for the selection, or for the next typed text |
+| `setBlockStyle(_:)` | Makes the selected paragraphs a title, heading or body text |
+| `toggleList(_:)` | Turns the selected paragraphs into a list, or back into text |
+| `undo()`, `redo()` | Undo and redo |
+| `focus()` | Shows the keyboard |
+| `dismissKeyboard()` | Hides the keyboard |
 
-let rtf = try text.richTextData(format: .rtf)         // readable by other apps
-let fromRTF = try NSAttributedString(richTextData: rtf, format: .rtf)
-```
+If you don't pass a context, the editor creates its own. You only need one when something outside the editor has to read or change the formatting.
 
-Text colors are not stored, so the text follows light and dark mode.
-Use `text.string` for a plain-text version, for example for search.
+### Loading text from elsewhere
 
-## How formatting is stored
+You can set `text` to any `NSAttributedString`, for example one loaded from RTF or built in code. The editor adapts it to your configuration:
 
-- **Title and heading** are font sizes. When text is loaded, every font is mapped to the closest configured font by size, keeping bold and italic.
-- **List items** are text prefixes (`•\t`, `1.\t`) with a hanging indent. Lists stay readable in plain text and survive RTF.
+- every font becomes the closest of `titleFont`, `headingFont` or `bodyFont` by size, keeping bold and italic;
+- a paragraph starting with `•` + tab or `1.` + tab is treated as a list item.
 
-## Examples
+### How formatting is stored
 
-Open `MossTextEditor.xcworkspace` and run the `MossTextEditorExample` scheme. Each example is a single file in [`Example/MossTextEditorExample/Examples`](Example/MossTextEditorExample/Examples):
+There is no hidden data model. Everything lives in the attributed string:
+
+- **Title and heading** are just their font sizes.
+- **List items** are real text: a `•` or a number, then a tab. Lists still read well as plain text and survive RTF.
+
+## Example app
+
+Open `MossTextEditor.xcworkspace` and run the **MossTextEditorExample** scheme. Each example is a single file you can read on its own:
 
 | Example | Shows |
 | --- | --- |
-| [Boxed editor](Example/MossTextEditorExample/Examples/BoxedEditorExample.swift) | A rounded box with the toolbar on top of the text, like a form field |
+| [Boxed editor](Example/MossTextEditorExample/Examples/BoxedEditorExample.swift) | An editor in a rounded box with the toolbar on top, like a form field |
 | [Custom style](Example/MossTextEditorExample/Examples/CustomStyleExample.swift) | Serif fonts, colors, spacing and a shorter toolbar |
-| [Saving and loading](Example/MossTextEditorExample/Examples/PersistenceExample.swift) | Saving as archive or RTF, reading it back and showing the decoded copy next to the original |
+| [Saving and loading](Example/MossTextEditorExample/Examples/PersistenceExample.swift) | Saving to a file and reading it back, to check that nothing gets lost |
 | [Read-only display](Example/MossTextEditorExample/Examples/ReadOnlyExample.swift) | Showing formatted text on a detail screen and editing it in place |
-| [Keyboard toolbar](Example/MossTextEditorExample/Examples/KeyboardToolbarExample.swift) | A full-screen editor with the default toolbar above the keyboard |
-| [Floating toolbar](Example/MossTextEditorExample/Examples/FloatingToolbarExample.swift) | A capsule toolbar floating above the keyboard while editing |
-| [Message composer](Example/MossTextEditorExample/Examples/MessageComposerExample.swift) | A chat-style growing input with a compact toolbar and a send button |
-| [Custom controls](Example/MossTextEditorExample/Examples/CustomToolbarExample.swift) | Your own buttons and menus driven by `RichTextContext` |
-
-The box used by the first examples is [`BoxedEditor`](Example/MossTextEditorExample/Shared/BoxedEditor.swift), about 40 lines you can copy into your app.
+| [Keyboard toolbar](Example/MossTextEditorExample/Examples/KeyboardToolbarExample.swift) | A full-screen editor with the toolbar above the keyboard |
+| [Floating toolbar](Example/MossTextEditorExample/Examples/FloatingToolbarExample.swift) | A capsule toolbar floating above the keyboard while typing |
+| [Message composer](Example/MossTextEditorExample/Examples/MessageComposerExample.swift) | A chat-style input that grows as you type, with a send button |
+| [Custom controls](Example/MossTextEditorExample/Examples/CustomToolbarExample.swift) | Your own buttons and menus instead of the ready-made toolbar |
 
 ## License
 
