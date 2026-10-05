@@ -34,12 +34,6 @@ In Xcode, choose **File → Add Package Dependencies…** and paste:
 https://github.com/ferenozcelik/moss-text-editor-swiftui
 ```
 
-Or add it to your `Package.swift`:
-
-```swift
-.package(url: "https://github.com/ferenozcelik/moss-text-editor-swiftui", from: "1.0.0")
-```
-
 ## Quick start
 
 ```swift
