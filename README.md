@@ -166,6 +166,27 @@ VStack(spacing: 0) {
 </td>
 </tr>
 <tr>
+<td width="240"><img src="Docs/Images/keyboard-light.png" width="240" alt="Keyboard toolbar"></td>
+<td>
+
+### Keyboard toolbar
+
+A full-screen editor with the toolbar right above the keyboard. No context needed.
+
+```swift
+RichTextEditor(
+    text: $text,
+    configuration: RichTextConfiguration(
+        keyboardToolbarItems: RichTextToolbarItem.defaultItems
+    )
+)
+```
+
+[`KeyboardToolbarExample.swift`](Example/MossTextEditorExample/Examples/KeyboardToolbarExample.swift)
+
+</td>
+</tr>
+<tr>
 <td width="240"><img src="Docs/Images/floating-light.png" width="240" alt="Floating toolbar"></td>
 <td>
 
