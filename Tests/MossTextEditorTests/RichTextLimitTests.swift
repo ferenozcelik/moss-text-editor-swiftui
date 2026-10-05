@@ -55,6 +55,19 @@ final class RichTextLimitTests: XCTestCase {
         XCTAssertEqual(textView.text, "Too lon")
     }
 
+    func testPasteInWindowIsCutToFit() {
+        let window = UIWindow(frame: CGRect(x: 0, y: 0, width: 320, height: 480))
+        window.addSubview(textView)
+        window.makeKeyAndVisible()
+        textView.becomeFirstResponder()
+        UIPasteboard.general.string = "Hello world"
+        textView.paste(nil)
+        XCTAssertEqual(textView.text, "Hello")
+        XCTAssertEqual(text.string, "Hello")
+        coordinator.undo()
+        XCTAssertEqual(textView.text, "")
+    }
+
     func testPrefixDoesNotSplitCharacters() {
         XCTAssertEqual(RichTextCoordinator.prefix(of: "ab👍c", maxLength: 3), "ab")
         XCTAssertEqual(RichTextCoordinator.prefix(of: "ab👍c", maxLength: 4), "ab👍")

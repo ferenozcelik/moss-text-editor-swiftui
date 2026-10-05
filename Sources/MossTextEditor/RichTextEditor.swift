@@ -378,7 +378,7 @@ final class RichTextCoordinator: NSObject, UITextViewDelegate {
                 // Inserts the part that fits, through this method again.
                 let fitting = Self.prefix(of: text, maxLength: available)
                 if !fitting.isEmpty, range == textView.selectedRange {
-                    textView.insertText(fitting)
+                    textView.insertTextAskingDelegate(fitting)
                 }
                 return false
             }

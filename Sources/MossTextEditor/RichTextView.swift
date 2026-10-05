@@ -57,7 +57,15 @@ final class RichTextView: UITextView {
             super.paste(sender)
             return
         }
-        // Goes through the delegate and the undo manager like typed text.
+        insertTextAskingDelegate(string)
+    }
+
+    /// Inserts text at the selection like typing does. `insertText` alone
+    /// skips the delegate, so the text would bypass the length limit and undo.
+    func insertTextAskingDelegate(_ string: String) {
+        guard delegate?.textView?(self, shouldChangeTextIn: selectedRange, replacementText: string) ?? true else {
+            return
+        }
         insertText(string)
     }
 }
