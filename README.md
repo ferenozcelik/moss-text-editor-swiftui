@@ -1,4 +1,4 @@
-# MossTextEditor
+# MossTextEditor - Rich Text Editor for SwiftUI
 
 [![Tests](https://github.com/ferenozcelik/moss-text-editor-swiftui/actions/workflows/tests.yml/badge.svg)](https://github.com/ferenozcelik/moss-text-editor-swiftui/actions/workflows/tests.yml)
 ![iOS 16+](https://img.shields.io/badge/iOS-16%2B-blue)
