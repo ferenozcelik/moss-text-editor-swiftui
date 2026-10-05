@@ -19,6 +19,12 @@ public struct RichTextConfiguration {
     public var placeholderColor: UIColor
     /// When `false`, the editor grows with its content instead of scrolling.
     public var isScrollEnabled: Bool
+    /// When ``isScrollEnabled`` is `false`, the editor grows with its content up
+    /// to this height, then scrolls. `nil` lets it grow without limit.
+    public var maxHeight: CGFloat?
+    /// The most characters (UTF-16 units, like `NSAttributedString.length`) the
+    /// user can type or paste. Pasted text is cut to fit. `nil` means no limit.
+    public var maxLength: Int?
     public var showsScrollIndicator: Bool
     public var isEditable: Bool
     public var keyboardDismissMode: UIScrollView.KeyboardDismissMode
@@ -49,6 +55,8 @@ public struct RichTextConfiguration {
         placeholder: String? = nil,
         placeholderColor: UIColor = .placeholderText,
         isScrollEnabled: Bool = true,
+        maxHeight: CGFloat? = nil,
+        maxLength: Int? = nil,
         showsScrollIndicator: Bool = true,
         isEditable: Bool = true,
         keyboardDismissMode: UIScrollView.KeyboardDismissMode = .interactive,
@@ -70,6 +78,8 @@ public struct RichTextConfiguration {
         self.placeholder = placeholder
         self.placeholderColor = placeholderColor
         self.isScrollEnabled = isScrollEnabled
+        self.maxHeight = maxHeight
+        self.maxLength = maxLength
         self.showsScrollIndicator = showsScrollIndicator
         self.isEditable = isEditable
         self.keyboardDismissMode = keyboardDismissMode

@@ -120,10 +120,12 @@ Pass a `RichTextConfiguration` to the editor with only the options you want to c
 | `placeholder` | none | Text shown while the editor is empty |
 | `placeholderColor` | `.placeholderText` | Color of the placeholder |
 | `isScrollEnabled` | `true` | When `false`, the editor doesn't scroll and grows as tall as its text. Use it inside your own `ScrollView` or for chat-style inputs |
+| `maxHeight` | none | With `isScrollEnabled: false`, the editor grows with its text up to this height, then scrolls |
 | `showsScrollIndicator` | `true` | Shows the scroll bar while scrolling |
 | **Behavior** | | |
 | `isEditable` | `true` | When `false`, the text can be read and selected but not changed |
 | `keyboardDismissMode` | `.interactive` | How the keyboard hides when scrolling the text |
+| `maxLength` | none | The most characters the user can type or paste. Pasted text is cut to fit |
 | `autocorrects` | `false` | Turns on the system's autocorrection |
 | `autoformatsLists` | `true` | Typing `- `, `* ` or `1. ` at the start of a line starts a list |
 | `pastesPlainText` | `true` | Pasted text takes the style at the cursor instead of keeping its original formatting |

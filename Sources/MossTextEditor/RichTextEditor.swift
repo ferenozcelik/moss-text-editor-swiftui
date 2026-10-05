@@ -85,7 +85,11 @@ private struct RichTextEditorRepresentable: UIViewRepresentable {
         let width = proposal.width ?? uiView.bounds.width
         guard width > 0 else { return nil }
         let height = uiView.sizeThatFits(CGSize(width: width, height: .greatestFiniteMagnitude)).height
-        return CGSize(width: width, height: height)
+        guard let maxHeight = configuration.maxHeight else {
+            return CGSize(width: width, height: height)
+        }
+        context.coordinator.setExceedsMaxHeight(height > maxHeight, in: uiView)
+        return CGSize(width: width, height: min(height, maxHeight))
     }
 }
 
@@ -100,6 +104,8 @@ final class RichTextCoordinator: NSObject, UITextViewDelegate {
     private var toolbarHost: UIHostingController<AnyView>?
     /// Typing that continues this run joins the undo step that started it.
     private var typingRun: TypingRun?
+    /// The text is taller than ``RichTextConfiguration/maxHeight``, so the editor scrolls.
+    private var exceedsMaxHeight = false
 
     private struct TypingRun {
         enum Kind { case insert, delete }
@@ -121,7 +127,7 @@ final class RichTextCoordinator: NSObject, UITextViewDelegate {
     func apply(_ configuration: RichTextConfiguration, to textView: RichTextView) {
         self.configuration = configuration
         textView.textContainerInset = configuration.contentInsets
-        textView.isScrollEnabled = configuration.isScrollEnabled
+        textView.isScrollEnabled = configuration.isScrollEnabled || exceedsMaxHeight
         textView.showsVerticalScrollIndicator = configuration.showsScrollIndicator
         textView.showsHorizontalScrollIndicator = configuration.showsScrollIndicator
         textView.isEditable = configuration.isEditable
@@ -135,6 +141,17 @@ final class RichTextCoordinator: NSObject, UITextViewDelegate {
         textView.placeholderLabel.font = configuration.bodyFont
         textView.placeholderLabel.textColor = configuration.placeholderColor
         installToolbar(in: textView)
+    }
+
+    func setExceedsMaxHeight(_ exceeds: Bool, in textView: RichTextView) {
+        guard exceeds != exceedsMaxHeight else { return }
+        exceedsMaxHeight = exceeds
+        textView.isScrollEnabled = configuration.isScrollEnabled || exceeds
+        guard exceeds else { return }
+        // Keeps the cursor in view once the text starts scrolling.
+        DispatchQueue.main.async {
+            textView.scrollRangeToVisible(textView.selectedRange)
+        }
     }
 
     private func installToolbar(in textView: RichTextView) {
@@ -352,11 +369,38 @@ final class RichTextCoordinator: NSObject, UITextViewDelegate {
 
     func textView(_ textView: UITextView, shouldChangeTextIn range: NSRange, replacementText text: String) -> Bool {
         guard let textView = textView as? RichTextView else { return true }
+        if let maxLength = configuration.maxLength, textView.markedTextRange == nil {
+            let available = maxLength - (textView.textStorage.length - range.length)
+            let length = (text as NSString).length
+            // Edits that don't add characters always go through, so text that
+            // is already too long can still be shortened.
+            if length > range.length, length > available {
+                // Inserts the part that fits, through this method again.
+                let fitting = Self.prefix(of: text, maxLength: available)
+                if !fitting.isEmpty, range == textView.selectedRange {
+                    textView.insertText(fitting)
+                }
+                return false
+            }
+        }
         let handled = handleEdit(in: textView, replacing: range, with: text)
         if !handled {
             recordTyping(in: textView, replacing: range, with: text)
         }
         return !handled
+    }
+
+    /// The longest start of `string` that fits in `maxLength` UTF-16 units
+    /// without splitting a character.
+    static func prefix(of string: String, maxLength: Int) -> String {
+        var length = 0
+        var end = string.startIndex
+        for character in string {
+            length += character.utf16.count
+            guard length <= maxLength else { break }
+            end = string.index(after: end)
+        }
+        return String(string[..<end])
     }
 
     /// Edits the formatter makes in place of the default typing behavior.
