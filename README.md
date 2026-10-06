@@ -3,6 +3,8 @@
 ![iOS 16+](https://img.shields.io/badge/iOS-16%2B-blue)
 ![Swift 5.9+](https://img.shields.io/badge/Swift-5.9%2B-orange)
 ![Swift Package Manager](https://img.shields.io/badge/SPM-compatible-brightgreen)
+[![Swift versions](https://img.shields.io/endpoint?url=https%3A%2F%2Fswiftpackageindex.com%2Fapi%2Fpackages%2Fferenozcelik%2Fmoss-text-editor-swiftui%2Fbadge%3Ftype%3Dswift-versions)](https://swiftpackageindex.com/ferenozcelik/moss-text-editor-swiftui)
+[![Platforms](https://img.shields.io/endpoint?url=https%3A%2F%2Fswiftpackageindex.com%2Fapi%2Fpackages%2Fferenozcelik%2Fmoss-text-editor-swiftui%2Fbadge%3Ftype%3Dplatforms)](https://swiftpackageindex.com/ferenozcelik/moss-text-editor-swiftui)
 [![License: MIT](https://img.shields.io/badge/License-MIT-lightgrey)](LICENSE)
 
 A rich text editor for SwiftUI. Drop it into your app to let people write with bold, italic, headings and lists.
@@ -32,6 +34,8 @@ In Xcode, choose **File → Add Package Dependencies…** and paste:
 ```
 https://github.com/ferenozcelik/moss-text-editor-swiftui
 ```
+
+Also listed on the [Swift Package Index](https://swiftpackageindex.com/ferenozcelik/moss-text-editor-swiftui).
 
 ## Quick start
 
