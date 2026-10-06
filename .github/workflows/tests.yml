@@ -11,6 +11,7 @@ permissions:
 jobs:
   test:
     runs-on: macos-15
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v5
       - name: Run tests

@@ -55,13 +55,14 @@ final class RichTextLimitTests: XCTestCase {
         XCTAssertEqual(textView.text, "Too lon")
     }
 
-    func testPasteInWindowIsCutToFit() {
+    func testPastedTextIsCutToFit() {
+        // Paste goes through insertTextAskingDelegate. The pasteboard itself is
+        // left out because reading it can wait for a permission prompt on CI.
         let window = UIWindow(frame: CGRect(x: 0, y: 0, width: 320, height: 480))
         window.addSubview(textView)
         window.makeKeyAndVisible()
         textView.becomeFirstResponder()
-        UIPasteboard.general.string = "Hello world"
-        textView.paste(nil)
+        textView.insertTextAskingDelegate("Hello world")
         XCTAssertEqual(textView.text, "Hello")
         XCTAssertEqual(text.string, "Hello")
         coordinator.undo()
